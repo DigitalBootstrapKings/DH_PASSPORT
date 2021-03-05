@@ -19,16 +19,11 @@ def getProfile(request):
     # recieve unique id/user id
     id = request.data['userId']
     user = User.objects.get(id=id)
-    payload = {
-        "firstName": user.firstName,
-        "lastName": user.lastName
-    }
-    r = requests.post('http://localhost:8000/api/user/checkStatus', data={"userId": id}).json()
+    r = requests.post('http://localhost:8000/api/user/checkStatus', data={"userId": id})
 
     return Response({
-        'success': r['success'],
-        'msg': r['msg'],
-        'data': payload
+        'success': r.json()['success'],
+        'msg': r.json()['msg'],
     })
 
 @api_view(['POST'])
@@ -36,8 +31,8 @@ def scanUser(request):
     id = request.data['userId']
     r = requests.post('http://localhost:8000/api/user/checkStatus', data={"userId": id}).json()
     return Response({
-        'success': r['success'],
-        'msg': r['msg']
+        'success': r.json()['success'],
+        'msg': r.json()['msg'],
     })
 
 

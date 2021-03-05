@@ -19,10 +19,13 @@ JWT_KEY = 'servsat1324jm'
 @api_view(['GET'])
 def testApi(request):
     print('In the test API!!')
-    t = datetime.datetime.utcnow() + timedelta(seconds=600)
+    # text = OneTimeText.objects.get(id=1)
+    # user = text.userId
+    # user.secureToken = 1
+    # user.save()
     return Response({
         'success': True,
-        'msg': 'Just trying some stuff out!'
+        'msg': 'Just ß some stuff out!'
     })
 
 @api_view(['POST'])
@@ -69,11 +72,7 @@ def keyVerification(request):
 
         return Response({
             'success': True,
-            'msg': 'Key successfully verified',
-            'data': {
-                'OHIP': record['OHIP'],
-                'DOB': record['DOB']
-            }
+            'msg': 'Key successfully verified'
         })
     except:
         return Response({
@@ -86,11 +85,14 @@ def keyVerification(request):
 def identityVerification(request):
     try:
         users = User.objects.filter(OHIP=request.data['OHIP'], lastName=request.data['lastName'], firstName=request.data['firstName'])
-
+        userId = users[0].id
         if users:
             return Response({
                 "success": True,
-                "msg": "Identity successfully verified!"
+                "msg": "Identity successfully verified!",
+                "data": {
+                    "userId": userId
+                }
             })
         else:
             return Response({
@@ -113,12 +115,15 @@ def signup(request):
                 'msg': 'Email already registered!'
             })
 
+
         hashed = bcrypt.hashpw(request.data['password'].encode('utf8'), bcrypt.gensalt())
-        user = User.objects.get(OHIP=request.data['OHIP'])
+        user = User.objects.get(id=request.data['userId'])
         user.email = request.data['email']
         user.phoneNumber = request.data['phoneNumber']
         user.password = hashed
         user.save()
+        
+        r = requests.post('http://localhost:8000/api/text/sendOneTimeText', data={'phoneNumber': request.data['phoneNumber']})
 
         return Response({
             'success': True,
@@ -169,18 +174,17 @@ def sendOneTimeText(request):
 
 @api_view(['POST'])
 def verifyOneTimeText(request):
-    try:   
-        phone = request.data['phoneNumber']
+    try:  
+        # Get key from request 
         one_key = request.data['key']
-        # Fetch user from db
-        user = User.objects.get(phoneNumber=phone)
-
+        
         # Query db to see if critrea fit
-        db_text = OneTimeText.objects.filter(userId=user, stillValid=True, oneTimeValue=one_key)
+        db_text = OneTimeText.objects.filter(stillValid=True, oneTimeValue=one_key)
 
         # If one time text is valid, change status to False
         # Assign a token to the user and save in db
         if db_text:
+            user = db_text[0].userId
             db_text[0].stillValid = False
             db_text[0].save()
             # JWT only lasts for 10minutes
@@ -195,7 +199,8 @@ def verifyOneTimeText(request):
                 'success': True,
                 'msg': 'Successfully logged user in!',
                 "data": {
-                    "token": jwt_token
+                    "token": jwt_token,
+                    "uniqueId": user.id
                 }
             })
         else:
@@ -214,7 +219,7 @@ def loginUser(request):
     try:
         users = User.objects.filter(email=request.data['email'])
         if users and bcrypt.checkpw(request.data['password'].encode('utf8'), users[0].password[2:-1].encode('utf8')):
-            
+            r = requests.post('http://localhost:8000/api/text/sendOneTimeText', data={'phoneNumber': users[0].phoneNumber})
             return Response({
                 'success': True,
                 'msg': 'Verified email and password!'

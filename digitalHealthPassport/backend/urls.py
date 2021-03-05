@@ -8,10 +8,10 @@ urlpatterns = [
     path('auth/signup', auth.signup, name='Signup user'),
     path('auth/login', auth.loginUser, name='Login user'),
     path('auth/loginEmployee', auth.loginEmployee, name='Login employee'),
-    path('auth/sendOneTimeText', auth.sendOneTimeText, name='Send one time password'),
-    path('auth/verifyOneTimeText', auth.verifyOneTimeText, name='Verify one time password'),
+    path('text/sendOneTimeText', auth.sendOneTimeText, name='Send one time password'),
+    path('text/verifyOneTimeText', auth.verifyOneTimeText, name='Verify one time password'),
     # 
-    path('test', testing.testApi, name='Test user'),
+    path('test', auth.testApi, name='Test user'),
     path('user/getProfile', testing.getProfile, name='Get user profile'),
     path('user/checkStatus', testing.checkStatus, name='Check user status'),
 
